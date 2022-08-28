@@ -10,19 +10,21 @@ import qutip as qt
 
 """
 Data Table for theta of photon
-p: 
-H:  0 = 0
-V: 1 = 90
+p:          qubit states
+H:  0 = 0   |0>
+V: 1 = 90   |1>
 x:
-D: 0 = 45
-A: 1 = 135
+D: 0 = 45   1/sqrt(2) [|0> + |1>]
+A: 1 = 135  1/sqrt(2) [|0> - |1>]
 """
 
 # photon polarazation encoding
 # p for plus
 p = {
     '0': 'H',
+    0: 'H',
     '1': 'V',
+    1: 'V'
 }
 
 p_d = {
@@ -32,14 +34,16 @@ p_d = {
 
 # encode classical bits into qubits, this is the data that Alice sends to Bob
 encode = {
-    '0': qt.Qobj((1, 0)),  # ground state
-    '1': qt.Qobj((0, 1))  # excited state
+    '0': qt.basis(2, 0),  # ground state
+    '1': qt.basis([2, 1])  # excited state
 }
 
 # photon polarazation encoding
 x = {
     '0': 'A',
+    0: 'A',
     '1': 'D',
+    1: 'A'
 }
 
 x_d = {
@@ -65,8 +69,8 @@ def linear_polarization(theta, alpha=np.uint16(0)):
         exp_a = 1.e+0
     else:
         exp_a = np.exp(alpha)
-    _x_ = qt.Qobj((1, 0))
-    y = qt.Qobj((0, 1))
+    _x_ = qt.basis(2, 0)  # ground state
+    y = qt.basis(2, 1)  # excited state
     phi_x = np.cos(theta)*exp_a
     phi_y = np.sin(theta)*exp_a
     phi = _x_*phi_x + y*phi_y
@@ -103,7 +107,7 @@ class Bb84:
             else:
                 polarizations.append(p[bit])
                 bases.append("+")
-            encoded.append(encoded[bit])
+            encoded.append(encode[bit])
         return encoded
 
     def decode(self, key=None):
@@ -124,16 +128,16 @@ class Bb84:
             coin_flip = bool(round(quantumrandom.randint(0, 1)))
 
             # if coin_flip is true, use x, else use p
+            tmp = int(enc[0][0][0].real)
             if coin_flip:
-                polarizations.append(x[enc[0]])  # polarazation decoding
+                polarizations.append(x[tmp])  # polarazation decoding
                 bases.append("x")  # non-orthogonal bases
-                theta = x_d[enc[0]]
+                theta = x_d[tmp]
             else:
-                polarizations.append(p[enc[0]])
+                polarizations.append(p[tmp])
                 bases.append("+")  # non-orthogonal bases
-                theta = p_d[enc[0]]
-
-
+                theta = p_d[tmp]
+            phi = linear_polarization(theta)
         return decoded
 
     def get_new_key(self, other):
@@ -142,7 +146,7 @@ class Bb84:
         # match, they get rid of it, the bits they have left are the result
 
         alice_encoded = self.encoded
-        bob_encoded = other.encoded
+        bob_encoded = other.decoded
         n = self.n
 
         if len(alice_encoded) != len(bob_encoded):
@@ -183,14 +187,16 @@ n = 2
 
 alice_key = gen_rand_key(n=n)
 alice = Bb84(key=alice_key, n=n)
-print(alice_key)
+print("alice_key: ",alice_key)
+
 # Alice encodes her key
 alice.encode()
 
-# Bob decodes Alice's encoded key by re-encoding it, only some of it will be decoded so the shared-secret will be created by keeping the correct bits
+# Bob decodes Alice's encoded key by re-encoding it, only some of it will be decoded so the shared-secret will be
+# created by keeping the correct bits
 bob = Bb84(key=alice.encoded, n=n)
-bob.encode()
+bob.decode()
 
 # alice and Bob generates shared-secrets
-alice.get_new_key(other=bob, n=n)
+alice.get_new_key(other=bob)
 alice.out(other=bob)
