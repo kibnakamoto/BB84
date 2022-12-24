@@ -2,7 +2,7 @@
 Copyright (C) 2022 Taha Canturk
 Date: August, 24, 2022
 
-This is an implementation of the BB84 protocol
+This is a simulation of the BB84 protocol
 """
 import numpy as np
 import quantumrandom
@@ -43,7 +43,7 @@ x = {
     '0': 'A',
     0: 'A',
     '1': 'D',
-    1: 'A'
+    1: 'D'
 }
 
 x_d = {
@@ -146,11 +146,11 @@ class Bb84:
         # match, they get rid of it, the bits they have left are the result
 
         alice_encoded = self.encoded
-        bob_encoded = other.decoded
+        bob_encoded = other.encoded
         n = self.n
 
         if len(alice_encoded) != len(bob_encoded):
-            raise QuantumValueError("length of encoded keys don\'t match")
+            raise QuantumValueError(f"length of encoded keys don\'t match {alice_encoded}::::::{bob_encoded}")
 
         shared_secret = []
         self.shared_secret = shared_secret
@@ -172,11 +172,11 @@ class Bb84:
             pol2 += other.polarizations[i] + ' | '
             base2 += other.bases[i] + ' | '
         le = len(val1)
-        print(f"{'-' * (le - 14) // 2}shared secrets{'-' * (le - 14) // 2}")
+        print(f"{'-'*(le - 14) // 2}shared secrets{'-'*(le-14) // 2}")
         print(f"Alice\'s: {val1}")
         print(f"base:     {base1}")
         print(f"polar:    {pol1}")
-        print('-' * le)
+        print('-'*le)
         print(f"Bob\'s:   {val2}")
         print(f"base:     {base2}")
         print(f"polar:    {pol2}")
